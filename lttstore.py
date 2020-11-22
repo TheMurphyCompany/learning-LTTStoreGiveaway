@@ -11,6 +11,9 @@ from threading import Thread
 def play_music():
     playsound('BUYME.mp3')
 
+def play_alarm():
+    playsound('notification.mp3')
+
 #waits
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -19,8 +22,6 @@ from selenium.common.exceptions import NoSuchElementException
 
 import random
 import time
-import csv
-import numpy as np
 
 # open chrome
 
@@ -38,11 +39,19 @@ driver.get(
 found = False
 url = ""
 attempt = 0
+last_price = 0.00
 while not found:
     pageContent = requests.get('https://www.lttstore.com/collections/all/?sort_by=created-descending')    
     tree = html.fromstring(pageContent.content)
     price = tree.xpath("(//span[@class='money'])")
     items = [0,1,2,3,4,5,6,7,8,9,10]
+    newest_price = float(price[0].text.replace(' USD','')[1:])
+    if newest_price != last_price :
+        alarm_thread = Thread(target=play_alarm)
+        alarm_thread.start()
+        last_price = newest_price
+        print('Found new price at : ' + str(newest_price))
+
     for x in items:
         try:
             free3080ti = float(price[x].text.replace(' USD','')[1:]) < 3
@@ -54,16 +63,16 @@ while not found:
             print('OH OH, WE BEEN COCKED BLOCKED!')
             music_thread = Thread(target=play_music)
             music_thread.start()
+            time.sleep(120)
 
     attempt+=1
-    if attempt%100==0 :
-        print("attempt number : "+ str(attempt))
+    print(str(attempt))
+      
+    if attempt%100==0 : 
         print("last price value :" + str(float(price[0].text.replace(' USD','')[1:])))
-    time.sleep(random.uniform(0.3, 0.8))
+    time.sleep(random.uniform(1.0, 2.0))
 
 if found:
-
-    # Play Music on Separate Thread (in background)
     music_thread = Thread(target=play_music)
     music_thread.start()
     driver.get(
